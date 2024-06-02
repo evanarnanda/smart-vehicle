@@ -48,6 +48,15 @@ def generate_gps_data(device_id, timestamp, vehicle_type='private'):
         'vehicle_type': vehicle_type,
     }
 
+def generate_traffic_data(device_id, timestamp, camera_id='front-dash-camera-1'):
+    return {
+        'id': uuid.uuid4(),
+        'device_id': device_id,
+        'timestamp': timestamp,
+        'camera_id': camera_id,
+        'snapshot': 'Base64EncodedString',
+    }
+
 def simulate_vehicle_movement():
     global start_location
     
@@ -76,9 +85,11 @@ def simulate_adventure(producer, vehicle_id):
     while True:
         vehicle_data = generate_vehicle_data(vehicle_id)
         gps_data = generate_gps_data(vehicle_data['device_id'], vehicle_data['timestamp'])
+        traffic_camera_data = generate_traffic_data(vehicle_data['device_id'], vehicle_data['timestamp'])
 
         print(vehicle_data)
         print(gps_data)
+        print(traffic_camera_data)
         break
 
 
