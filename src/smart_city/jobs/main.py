@@ -57,6 +57,39 @@ def generate_traffic_data(device_id, timestamp, camera_id='front-dash-camera-1')
         'snapshot': 'Base64EncodedString',
     }
 
+def generate_weather_data(device_id, timestamp, latitude, longitude):
+    conditions = random.choice(['sunny', 'cloudy', 'rainy'])
+    # generate random values for temperature, humidity, wind speed and direction
+    match conditions:
+        case 'sunny':
+            ta = random.randint(20, 38)
+            e = random.randint(50, 70)
+            ws = random.randint(0, 5)
+            wd = random.randint(0, 360)
+        case 'cloudy':
+            ta = random.randint(20, 30)
+            e = random.randint(40, 60)
+            ws = random.randint(0, 10)
+            wd = random.randint(0, 360)
+        case 'rainy':
+            ta = random.randint(20, 24)
+            e = random.randint(50, 70)
+            ws = random.randint(5, 10)
+            wd = random.randint(0, 360)
+    return {
+        'id': uuid.uuid4(),
+        'device_id': device_id,
+        'timestamp': timestamp,
+        'latitude': latitude,
+        'longitude': longitude,
+        'condition': conditions,
+        'temperature': ta,
+        'feels_like': '{:.2f}'.format(ta + 0.33*e - 0.7*ws - 4),
+        'humidity': e,
+        'wind_speed': ws,
+        'wind_direction': wd,
+    }
+
 def simulate_vehicle_movement():
     global start_location
     
@@ -83,13 +116,18 @@ def generate_vehicle_data(device_id):
 
 def simulate_adventure(producer, vehicle_id):
     while True:
+        # generate vehicle data general information
         vehicle_data = generate_vehicle_data(vehicle_id)
+        # generate GPS data to record the vehicle's location
         gps_data = generate_gps_data(vehicle_data['device_id'], vehicle_data['timestamp'])
+        # generate traffic camera data to record the vehicle's movement and the vehicle's surroundings
         traffic_camera_data = generate_traffic_data(vehicle_data['device_id'], vehicle_data['timestamp'])
-
+        # generate weather data to record the weather conditions based on the vehicle's gps data
+        weather_data = generate_weather_data(vehicle_data['device_id'], vehicle_data['timestamp'], gps_data['latitude'], gps_data['longitude'])
         print(vehicle_data)
         print(gps_data)
         print(traffic_camera_data)
+        print(weather_data)
         break
 
 
