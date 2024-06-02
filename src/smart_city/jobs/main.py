@@ -4,6 +4,7 @@ import simplejson as json
 from datetime import datetime, timedelta
 import uuid
 import random
+import time
 
 JAKARTA_COORDINATES = {
     'latitude': -6.183333,
@@ -16,8 +17,8 @@ SURABAYA_COORDINATES = {
 }
 
 # Simple Movement from Jakarta to Surabaya
-LATITUDE_INCREMENT = (JAKARTA_COORDINATES['latitude'] - SURABAYA_COORDINATES['latitude']) / 100
-LONGITUDE_INCREMENT = (JAKARTA_COORDINATES['longitude'] - SURABAYA_COORDINATES['longitude']) / 100
+LATITUDE_INCREMENT = (JAKARTA_COORDINATES['latitude'] + SURABAYA_COORDINATES['latitude']) / 100
+LONGITUDE_INCREMENT = (JAKARTA_COORDINATES['longitude'] + SURABAYA_COORDINATES['longitude']) / 100
 
 # Environtment Variables for configuring Kafka
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
@@ -114,6 +115,27 @@ def generate_vehicle_data(device_id):
         'fuel': 'Hybrid',
     }
 
+def json_serializer(obj):
+    if isinstance(obj, uuid.UUID):
+        return str(obj)
+    raise TypeError("Type %s not serializable" % type(obj))
+
+def delivery_report(err, msg):
+    if err is not None:
+        print(f'Delivery failed: {err}')
+    else:
+        print(f'Message delivered to {msg.topic()} at offset {msg.offset()}')
+
+def produce_data_to_kafka(producer, topic, data):
+    producer.produce(
+        topic,
+        key=str(data['id']),
+        value=json.dumps(data, default=json_serializer).encode('utf-8'),
+        on_delivery=delivery_report
+    )
+
+    producer.flush()
+ 
 def simulate_adventure(producer, vehicle_id):
     while True:
         # generate vehicle data general information
@@ -124,12 +146,18 @@ def simulate_adventure(producer, vehicle_id):
         traffic_camera_data = generate_traffic_data(vehicle_data['device_id'], vehicle_data['timestamp'])
         # generate weather data to record the weather conditions based on the vehicle's gps data
         weather_data = generate_weather_data(vehicle_data['device_id'], vehicle_data['timestamp'], gps_data['latitude'], gps_data['longitude'])
-        print(vehicle_data)
-        print(gps_data)
-        print(traffic_camera_data)
-        print(weather_data)
-        break
+        
+        if (gps_data['latitude'] <= SURABAYA_COORDINATES['latitude']
+            and gps_data['longitude'] >= SURABAYA_COORDINATES['longitude']):
+            print('Vehicle is in Surabaya, at {}'.format(vehicle_data['timestamp']))
+            break
 
+        produce_data_to_kafka(producer, VEHICLES_TOPIC, vehicle_data)
+        produce_data_to_kafka(producer, GPS_TOPIC, gps_data)
+        produce_data_to_kafka(producer, TRAFFIC_TOPIC, traffic_camera_data)
+        produce_data_to_kafka(producer, WEATHER_TOPIC, weather_data)
+
+        time.sleep(5)
 
 if __name__ == '__main__':
     producer_config = {
