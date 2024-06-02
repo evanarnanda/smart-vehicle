@@ -1,0 +1,23 @@
+[project]
+name = "smart-city"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "evanarnanda", email = "evanarnanda@gmail.com"},
+]
+dependencies = [
+    "confluent-kafka>=2.4.0",
+    "simplejson>=3.19.2",
+    "pyspark>=3.5.1",
+]
+requires-python = ">=3.12"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
+[tool.pdm]
+distribution = true
