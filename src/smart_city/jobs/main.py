@@ -36,6 +36,18 @@ def get_next_timestamp():
     start_time += timedelta(seconds=random.randint(30, 60))
     return start_time
 
+def generate_gps_data(device_id, timestamp, vehicle_type='private'):
+    location = simulate_vehicle_movement()
+    return {
+        'id': uuid.uuid4(),
+        'device_id': device_id,
+        'timestamp': timestamp,
+        'latitude': location['latitude'],
+        'longitude': location['longitude'],
+        'speed': random.randint(0, 80),
+        'vehicle_type': vehicle_type,
+    }
+
 def simulate_vehicle_movement():
     global start_location
     
@@ -50,14 +62,10 @@ def simulate_vehicle_movement():
     return start_location   
 
 def generate_vehicle_data(device_id):
-    location = simulate_vehicle_movement()
     return {
         'id': uuid.uuid4(),
         'device_id': device_id,
         'timestamp': get_next_timestamp().isoformat(),
-        'location': (location['latitude'], location['longitude']),
-        'speed': random.randint(40, 80),
-        'direction': 'East',
         'make': 'Toyota',
         'model': 'Camry',
         'year': 2018,
@@ -67,7 +75,10 @@ def generate_vehicle_data(device_id):
 def simulate_adventure(producer, vehicle_id):
     while True:
         vehicle_data = generate_vehicle_data(vehicle_id)
+        gps_data = generate_gps_data(vehicle_data['device_id'], vehicle_data['timestamp'])
+
         print(vehicle_data)
+        print(gps_data)
         break
 
 
@@ -82,8 +93,8 @@ if __name__ == '__main__':
         simulate_adventure(producer, 'Vehicle-Test-1')
 
     except KeyboardInterrupt:
-        print(f'Simulation stopped at {datetime.now() - start_time}')
+        print(f'Simulation stopped at {datetime.now()}')
 
     except Exception as e:
-        print(f'Simulation failed at {datetime.now() - start_time}')
+        print(f'Simulation failed at {datetime.now()}')
         print(f'Error: {e}')
